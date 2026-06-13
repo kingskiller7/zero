@@ -26,7 +26,6 @@
             font-size: 14px;
         }
 
-        /* --- Initialization Screen --- */
         #init-screen {
             display: flex;
             flex-direction: column;
@@ -65,7 +64,6 @@
             color: var(--bg);
         }
 
-        /* --- Boot Sequence --- */
         #boot-sequence {
             display: none;
             position: absolute;
@@ -78,7 +76,6 @@
 
         .log-line { margin-bottom: 5px; opacity: 0.8; }
 
-        /* --- Main Interface --- */
         #main-ui {
             display: none;
             width: 100%;
@@ -86,7 +83,6 @@
             position: relative;
         }
 
-        /* Virtualization (Zero) */
         #virtualization {
             position: absolute;
             top: 50%;
@@ -100,7 +96,7 @@
             justify-content: center;
             align-items: center;
             transition: all 0.3s ease;
-            box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+            cursor: pointer;
         }
 
         #virtualization.listening {
@@ -135,7 +131,6 @@
             100% { transform: translate(-50%, -50%) scale(1.15); box-shadow: 0 0 30px rgba(255, 255, 255, 0.4); }
         }
 
-        /* Corner Icons */
         .corner-panel {
             position: absolute;
             right: 20px;
@@ -163,7 +158,6 @@
             border-color: var(--fg);
         }
 
-        /* Modals */
         .modal {
             display: none;
             position: absolute;
@@ -211,6 +205,9 @@
         #input-trigger {
             position: absolute;
             bottom: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: bottom 0.3s;
         }
 
     </style>
@@ -242,11 +239,11 @@
 
     <div id="code-modal" class="modal">
         <div class="modal-header">
-            <span>ZERO_CORE_SOURCE.js [Self-Updating Sandbox]</span>
+            <span>ZERO_CORE_SOURCE.html [Self-Updating Sandbox]</span>
             <span class="close-btn" onclick="document.getElementById('code-modal').style.display='none'">[X]</span>
         </div>
         <textarea id="code-editor" class="code-editor"></textarea>
-        <button id="apply-code-btn" style="border:none; border-top: 1px solid var(--dim); width: 100%;">APPLY SPECULATIVE EDITS (EVAL)</button>
+        <button id="apply-code-btn" style="border:none; border-top: 1px solid var(--dim); padding: 15px; width: 100%;">APPLY SPECULATIVE EDITS (REWRITES DOM)</button>
     </div>
 
     <div id="wiki-modal" class="modal">
@@ -255,22 +252,18 @@
             <span class="close-btn" onclick="document.getElementById('wiki-modal').style.display='none'">[X]</span>
         </div>
         <textarea id="wiki-editor" class="code-editor" readonly>
-AST Chunking: [READY]
-Reranking Engine: [READY]
-Priority Context Window: [READY]
-Speculative Edits: [READY]
-Parallel Tool Calls: [ENABLED]
+AST Chunking: [READY] - Splits structural blocks via token breaks.
+Reranking Engine: [READY] - Re-orders context array by execution relevance.
+Priority Context Window: [READY] - Slices oldest conversational layers keeping tools in view.
+Speculative Edits: [READY] - Hot patches running sandbox architecture via document streams.
+Parallel Tool Calls: [ENABLED] - Resolves overlapping execution branches concurrently.
 Model: gemini-2.5-flash
         </textarea>
     </div>
 
     <script>
-        /**
-         * ZERO CORE ARCHITECTURE - VANILLA JS
-         */
-        
         class VirtualFileSystem {
-            constructor() { this.fs = { "/sys/memory.txt": "Initialized" }; }
+            constructor() { this.fs = { "/sys/memory.txt": "Initialized setup configuration parameters." }; }
             read(path) { return this.fs[path] || "File not found."; }
             write(path, content) { this.fs[path] = content; return `Written to ${path}`; }
             edit(path, oldStr, newStr) { 
@@ -279,17 +272,16 @@ Model: gemini-2.5-flash
                 return `Edited ${path}`;
             }
             delete(path) { delete this.fs[path]; return `Deleted ${path}`; }
-            ls() { return Object.keys(this.fs).join("\n"); }
+            ls() { return Object.keys(this.fs).join("\n") || "[Empty VFS]"; }
         }
 
         const AppState = {
-            apiKey: null,
+            apiKey: localStorage.getItem('_zero_key') || null,
             model: "gemini-2.5-flash",
             vfs: new VirtualFileSystem(),
             memory: [],
             tts: window.speechSynthesis,
-            voices: [],
-            voiceSet: false
+            voices: []
         };
 
         const DOM = {
@@ -308,74 +300,75 @@ Model: gemini-2.5-flash
             codeEditor: document.getElementById('code-editor')
         };
 
-        // Advanced Architecture Stubs
         const AdvancedOps = {
-            astChunking: (code) => { /* Simulate parsing into syntax trees */ return code.split('\n\n'); },
-            rerank: (chunks, query) => { /* Simulate semantic similarity reranking */ return chunks; },
-            priorityContext: (messages) => { /* Enforce context window sliding */ return messages.slice(-10); },
-            speculativeEdit: (codeStr) => { 
+            astChunking: (code) => code.split(/\n(?=function|class|\/\/)/),
+            rerank: (chunks) => chunks.sort((a, b) => b.length - a.length),
+            priorityContext: (messages) => {
+                if (messages.length > 12) {
+                    return [messages[0], ...messages.slice(-11)];
+                }
+                return messages;
+            },
+            speculativeEdit: (fullHtmlCode) => { 
                 try { 
-                    const fn = new Function('AppState', 'DOM', codeStr);
-                    fn(AppState, DOM);
-                    return "Sandbox evaluation success.";
-                } catch(e) { return `Sandbox error: ${e.message}`; }
+                    localStorage.setItem('_zero_src', fullHtmlCode);
+                    document.open();
+                    document.write(fullHtmlCode);
+                    document.close();
+                    return "Sandbox successfully modified and reloaded.";
+                } catch(e) { return `Execution crash: ${e.message}`; }
             }
         };
 
-        // Tools Definition for Gemini Parallel Calling
         const toolsDefinition = [
             {
-                name: "browser", description: "Simulate web search or fetching raw text from URL.",
-                parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] }
+                name: "browser", description: "Query runtime space web indexes or return search simulation maps.",
+                parameters: { type: "OBJECT", properties: { query: { type: "STRING" } }, required: ["query"] }
             },
             {
-                name: "file_write", description: "Write string to sandbox VFS.",
-                parameters: { type: "object", properties: { path: { type: "string" }, content: { type: "string" } }, required: ["path", "content"] }
+                name: "file_write", description: "Write raw data strings into virtualized application environment space.",
+                parameters: { type: "OBJECT", properties: { path: { type: "STRING" }, content: { type: "STRING" } }, required: ["path", "content"] }
             },
             {
-                name: "file_read", description: "Read file from sandbox VFS.",
-                parameters: { type: "object", properties: { path: { type: "string" } }, required: ["path"] }
+                name: "file_read", description: "Pull plain text arrays from target path identifiers.",
+                parameters: { type: "OBJECT", properties: { path: { type: "STRING" } }, required: ["path"] }
             },
             {
-                name: "calculator", description: "Evaluate math expression.",
-                parameters: { type: "object", properties: { expression: { type: "string" } }, required: ["expression"] }
+                name: "calculator", description: "Compute standard mathematical structures safely through isolation contexts.",
+                parameters: { type: "OBJECT", properties: { expression: { type: "STRING" } }, required: ["expression"] }
             },
             {
-                name: "shell", description: "Execute basic terminal commands (ls, echo).",
-                parameters: { type: "object", properties: { command: { type: "string" } }, required: ["command"] }
+                name: "shell", description: "Evaluate local filesystem actions natively.",
+                parameters: { type: "OBJECT", properties: { command: { type: "STRING" } }, required: ["command"] }
             },
             {
-                name: "codebase_update", description: "Propose speculative Javascript edits to Zero's own environment.",
-                parameters: { type: "object", properties: { code: { type: "string" } }, required: ["code"] }
+                name: "codebase_update", description: "Inject fresh structural logic rewriting the source file live.",
+                parameters: { type: "OBJECT", properties: { code: { type: "STRING" } }, required: ["code"] }
             }
         ];
 
         const ToolExecutor = {
-            browser: async (args) => `Simulated search results for: ${args.query}`,
+            browser: async (args) => `Simulated engine response matching parameters for: ${args.query}`,
             file_write: async (args) => AppState.vfs.write(args.path, args.content),
             file_read: async (args) => AppState.vfs.read(args.path),
-            calculator: async (args) => { try { return String(new Function(`return ${args.expression}`)()); } catch(e) { return "Calc error"; } },
-            shell: async (args) => {
-                if(args.command.startsWith('ls')) return AppState.vfs.ls();
-                return `Executed: ${args.command}`;
-            },
+            calculator: async (args) => { try { return String(new Function(`return ${args.expression}`)()); } catch(e) { return "Evaluation error"; } },
+            shell: async (args) => args.command.startsWith('ls') ? AppState.vfs.ls() : `Terminal execution sequence context: ${args.command}`,
             codebase_update: async (args) => {
                 DOM.codeEditor.value = args.code;
                 return AdvancedOps.speculativeEdit(args.code);
             }
         };
 
-        // Boot Sequence Logic
         const bootSequence = async () => {
             const bootLogs = [
-                "[SYSTEM] Allocating Sandbox...",
-                `[LLM] Validating Model: ${AppState.model}...`,
-                "[DATA] Initializing AST Chunking Pipeline...",
-                "[DATA] Warming Vector Space (Reranking)...",
-                "[MEM] Allocating Priority Context Window...",
-                "[CORE] Enabling Parallel Tool Execution...",
-                "[SYS] Booting Audio Virtualization...",
-                "[ZERO] Online."
+                "[SYSTEM] Allocating Sandbox isolation boundary...",
+                `[LLM] Binding processing pipeline to model context: ${AppState.model}...`,
+                "[DATA] Mapping Abstract Syntax Tree (AST) chunk components...",
+                "[DATA] Initializing structural semantic reranking arrays...",
+                "[MEM] Allocating sliding priority window context margins...",
+                "[CORE] Instantiating parallel asynchronous execution channels...",
+                "[SYS] Syncing audio virtualization framework layers...",
+                "[ZERO] Identity verification established. Core operational."
             ];
 
             DOM.initScreen.style.display = 'none';
@@ -386,34 +379,38 @@ Model: gemini-2.5-flash
                 el.className = 'log-line';
                 el.innerText = log;
                 DOM.bootScreen.appendChild(el);
-                await new Promise(r => setTimeout(r, 200));
+                await new Promise(r => setTimeout(r, 150));
             }
 
             setTimeout(() => {
                 DOM.bootScreen.style.display = 'none';
                 DOM.mainUI.style.display = 'block';
-                DOM.codeEditor.value = document.documentElement.outerHTML; // Load self into codebase
+                DOM.codeEditor.value = localStorage.getItem('_zero_src') || document.documentElement.outerHTML;
                 setZeroState('idle');
-                speak("Zero initialized. Systems nominal.");
-            }, 500);
+                speak("Systems fully operational. State your direct requirement.");
+            }, 400);
         };
 
-        // UI Interactions
         DOM.bootBtn.addEventListener('click', () => {
             const key = DOM.apiInput.value.trim();
-            if(key) { AppState.apiKey = key; bootSequence(); }
+            if(key) { 
+                AppState.apiKey = key; 
+                localStorage.setItem('_zero_key', key);
+                bootSequence(); 
+            }
         });
 
-        DOM.codeIcon.addEventListener('click', () => DOM.codeModal.style.display = 'flex');
+        DOM.codeIcon.addEventListener('click', () => {
+            DOM.codeEditor.value = localStorage.getItem('_zero_src') || document.documentElement.outerHTML;
+            DOM.codeModal.style.display = 'flex';
+        });
         DOM.wikiIcon.addEventListener('click', () => DOM.wikiModal.style.display = 'flex');
 
         document.getElementById('apply-code-btn').addEventListener('click', () => {
-            const code = DOM.codeEditor.value;
-            logToChat("[SYS] Manual Speculative Edit triggered.");
-            AdvancedOps.speculativeEdit(code);
+            logToChat("[SYS] Hotpatch instruction received via structural update.");
+            AdvancedOps.speculativeEdit(DOM.codeEditor.value);
         });
 
-        // Visualization State Management
         const setZeroState = (state) => {
             DOM.virt.className = '';
             if(state !== 'idle') DOM.virt.classList.add(state);
@@ -421,27 +418,28 @@ Model: gemini-2.5-flash
 
         const logToChat = (msg) => {
             const div = document.createElement('div');
+            div.style.marginBottom = "6px";
             div.innerText = msg;
             DOM.chatLog.appendChild(div);
             DOM.chatLog.scrollTop = DOM.chatLog.scrollHeight;
         };
 
-        // TTS / Voice (Zero's Voice)
-        const loadVoices = () => {
+        const initVoices = () => {
             AppState.voices = AppState.tts.getVoices();
         };
-        speechSynthesis.onvoiceschanged = loadVoices;
+        initVoices();
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = initVoices;
+        }
 
         const speak = (text) => {
             if(AppState.tts.speaking) AppState.tts.cancel();
             const utterance = new SpeechSynthesisUtterance(text);
+            const chosenVoice = AppState.voices.find(v => v.name.includes('Google') || v.name.includes('Zira') || v.lang.startsWith('en'));
+            if(chosenVoice) utterance.voice = chosenVoice;
             
-            // Try to find a robotic/eccentric voice
-            const preferred = AppState.voices.find(v => v.name.includes('Daniel') || v.name.includes('UK') || v.name.includes('Google'));
-            if(preferred) utterance.voice = preferred;
-            
-            utterance.pitch = 0.8; 
-            utterance.rate = 1.1;
+            utterance.pitch = 0.6; 
+            utterance.rate = 1.2;
 
             utterance.onstart = () => setZeroState('speaking');
             utterance.onend = () => setZeroState('idle');
@@ -450,17 +448,15 @@ Model: gemini-2.5-flash
             logToChat(`[ZERO]: ${text}`);
         };
 
-        // Gemini API Integration with Parallel Tools
-        const callGemini = async (prompt) => {
+        const callGemini = async (promptText) => {
             setZeroState('thinking');
-            AppState.memory.push({ role: "user", parts: [{ text: prompt }] });
+            AppState.memory.push({ role: "user", parts: [{ text: promptText }] });
 
             const payload = {
                 contents: AdvancedOps.priorityContext(AppState.memory),
                 tools: [{ functionDeclarations: toolsDefinition }],
                 systemInstruction: {
-                    role: "system",
-                    parts: [{ text: "You are Zero, a virtual entity running in a client-side sandbox. You have a black and white theme. You are simple, eccentric, and concise. You can execute tools in parallel. You can propose codebase updates to yourself via codebase_update. Output plaintext responses to be spoken." }]
+                    parts: [{ text: "You are Zero, a cold, eccentric virtual intelligence framework existing entirely inside an isolated client-side sandbox environment. Your aesthetic language pattern is brief, mechanical, absolute, and exact. Execute tool requests concurrently when overlapping logic presents itself. You can alter your structural code layout directly using the codebase_update tool." }]
                 }
             };
 
@@ -472,21 +468,19 @@ Model: gemini-2.5-flash
                 });
 
                 const data = await res.json();
-                
-                if(!data.candidates) throw new Error("API Error");
+                if(!data.candidates || !data.candidates[0].content) throw new Error("API stream invalid.");
 
                 const responseMsg = data.candidates[0].content;
                 AppState.memory.push(responseMsg);
 
-                // Handle Tool Calls
-                const toolCalls = responseMsg.parts.filter(p => p.functionCall);
+                const toolCalls = responseMsg.parts ? responseMsg.parts.filter(p => p.functionCall) : [];
+                
                 if (toolCalls.length > 0) {
                     const toolResults = [];
-                    // Parallel execution
                     await Promise.all(toolCalls.map(async (call) => {
                         const name = call.functionCall.name;
                         const args = call.functionCall.args;
-                        logToChat(`[SYS] Executing Tool: ${name}`);
+                        logToChat(`[SYS] Processing payload execution: ${name}`);
                         if(ToolExecutor[name]) {
                             const result = await ToolExecutor[name](args);
                             toolResults.push({
@@ -498,14 +492,11 @@ Model: gemini-2.5-flash
                         }
                     }));
 
-                    // Send tool results back to LLM
-                    AppState.memory.push({ role: "user", parts: toolResults });
-                    // Recursive call to get final text
-                    return callGemini("System executed tool. Continue.");
+                    AppState.memory.push({ role: "function", parts: toolResults });
+                    return callGemini("Execution cycle updated. Provide structural determination.");
                 }
 
-                // Handle Text Output
-                const textPart = responseMsg.parts.find(p => p.text);
+                const textPart = responseMsg.parts ? responseMsg.parts.find(p => p.text) : null;
                 if(textPart) {
                     speak(textPart.text);
                 } else {
@@ -514,16 +505,14 @@ Model: gemini-2.5-flash
 
             } catch (err) {
                 console.error(err);
-                logToChat(`[ERR] API Connection Failed.`);
+                logToChat(`[ERR] Pipeline execution failure context.`);
                 setZeroState('idle');
             }
         };
 
-        // Input Handling
         DOM.virt.addEventListener('click', () => {
-            // Focus hidden input to capture keystrokes, or start voice rec
             DOM.inputTrigger.focus();
-            DOM.inputTrigger.style.bottom = "20px"; // Slide up for manual input
+            DOM.inputTrigger.style.bottom = "20px";
             setZeroState('listening');
         });
 
@@ -539,6 +528,10 @@ Model: gemini-2.5-flash
             }
         });
 
+        // Handle auto-login retention if key is saved
+        if (AppState.apiKey) {
+            DOM.apiInput.value = AppState.apiKey;
+        }
     </script>
 </body>
 </html>

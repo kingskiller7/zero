@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zero - Agentic Sandbox</title>
+    <style>
+        :root {
+            --bg: #000000;
+            --fg: #ffffff;
+            --dim: #333333;
+            --font-main: 'Courier New', Courier, monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background-color: var(--bg);
+            color: var(--fg);
+            font-family: var(--font-main);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-size: 14px;
+        }
+
+        /* --- Initialization Screen --- */
+        #init-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            z-index: 100;
+        }
+
+        input[type="password"], input[type="text"] {
+            background: transparent;
+            border: 1px solid var(--dim);
+            color: var(--fg);
+            padding: 10px;
+            font-family: var(--font-main);
+            width: 300px;
+            outline: none;
+        }
+
+        input[type="password"]:focus, input[type="text"]:focus {
+            border-color: var(--fg);
+        }
+
+        button {
+            background: transparent;
+            color: var(--fg);
+            border: 1px solid var(--fg);
+            padding: 10px 20px;
+            cursor: pointer;
+            font-family: var(--font-main);
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: var(--fg);
+            color: var(--bg);
+        }
+
+        /* --- Boot Sequence --- */
+        #boot-sequence {
+            display: none;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .log-line { margin-bottom: 5px; opacity: 0.8; }
+
+        /* --- Main Interface --- */
+        #main-ui {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Virtualization (Zero) */
+        #virtualization {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 2px solid var(--dim);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+        }
+
+        #virtualization.listening {
+            border-color: var(--fg);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+
+        #virtualization.thinking {
+            animation: pulse 1.5s infinite;
+        }
+
+        #virtualization.speaking {
+            animation: waveform 0.5s infinite alternate;
+        }
+
+        #core-ring {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--fg);
+            transition: all 0.2s ease;
+        }
+
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(0.95); border-color: var(--dim); }
+            50% { transform: translate(-50%, -50%) scale(1.05); border-color: var(--fg); }
+            100% { transform: translate(-50%, -50%) scale(0.95); border-color: var(--dim); }
+        }
+
+        @keyframes waveform {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            100% { transform: translate(-50%, -50%) scale(1.15); box-shadow: 0 0 30px rgba(255, 255, 255, 0.4); }
+        }
+
+        /* Corner Icons */
+        .corner-panel {
+            position: absolute;
+            right: 20px;
+            bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--dim);
+            background: var(--bg);
+            color: var(--fg);
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover {
+            border-color: var(--fg);
+        }
+
+        /* Modals */
+        .modal {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 80%;
+            background: var(--bg);
+            border: 1px solid var(--fg);
+            z-index: 200;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 10px;
+            border-bottom: 1px solid var(--dim);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .close-btn { cursor: pointer; color: var(--fg); font-weight: bold; }
+
+        textarea.code-editor {
+            flex-grow: 1;
+            background: var(--bg);
+            color: var(--fg);
+            font-family: var(--font-main);
+            border: none;
+            padding: 20px;
+            resize: none;
+            outline: none;
+        }
+
+        #chat-log {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 400px;
+            max-height: 200px;
+            overflow-y: auto;
+            pointer-events: none;
+        }
+
+        #input-trigger {
+            position: absolute;
+            bottom: -100px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="init-screen">
+        <h2>[ ZERO : INIT ]</h2>
+        <input type="password" id="api-key-input" placeholder="ENTER GEMINI API KEY..." autocomplete="off">
+        <button id="boot-btn">INITIALIZE</button>
+    </div>
+
+    <div id="boot-sequence"></div>
+
+    <div id="main-ui">
+        <div id="virtualization">
+            <div id="core-ring"></div>
+        </div>
+
+        <div id="chat-log"></div>
+
+        <div class="corner-panel">
+            <button class="icon-btn" id="wiki-icon" title="LLM Wiki">[W]</button>
+            <button class="icon-btn" id="code-icon" title="Codebase">[C]</button>
+        </div>
+
+        <input type="text" id="input-trigger" placeholder="Speak or type...">
+    </div>
+
+    <div id="code-modal" class="modal">
+        <div class="modal-header">
+            <span>ZERO_CORE_SOURCE.js [Self-Updating Sandbox]</span>
+            <span class="close-btn" onclick="document.getElementById('code-modal').style.display='none'">[X]</span>
+        </div>
+        <textarea id="code-editor" class="code-editor"></textarea>
+        <button id="apply-code-btn" style="border:none; border-top: 1px solid var(--dim); width: 100%;">APPLY SPECULATIVE EDITS (EVAL)</button>
+    </div>
+
+    <div id="wiki-modal" class="modal">
+        <div class="modal-header">
+            <span>ZERO_WIKI [RAG / Concept Graph]</span>
+            <span class="close-btn" onclick="document.getElementById('wiki-modal').style.display='none'">[X]</span>
+        </div>
+        <textarea id="wiki-editor" class="code-editor" readonly>
+AST Chunking: [READY]
+Reranking Engine: [READY]
+Priority Context Window: [READY]
+Speculative Edits: [READY]
+Parallel Tool Calls: [ENABLED]
+Model: gemini-2.5-flash
+        </textarea>
+    </div>
+
+    <script>
+        /**
+         * ZERO CORE ARCHITECTURE - VANILLA JS
+         */
+        
+        class VirtualFileSystem {
+            constructor() { this.fs = { "/sys/memory.txt": "Initialized" }; }
+            read(path) { return this.fs[path] || "File not found."; }
+            write(path, content) { this.fs[path] = content; return `Written to ${path}`; }
+            edit(path, oldStr, newStr) { 
+                if(!this.fs[path]) return "File not found.";
+                this.fs[path] = this.fs[path].replace(oldStr, newStr); 
+                return `Edited ${path}`;
+            }
+            delete(path) { delete this.fs[path]; return `Deleted ${path}`; }
+            ls() { return Object.keys(this.fs).join("\n"); }
+        }
+
+        const AppState = {
+            apiKey: null,
+            model: "gemini-2.5-flash",
+            vfs: new VirtualFileSystem(),
+            memory: [],
+            tts: window.speechSynthesis,
+            voices: [],
+            voiceSet: false
+        };
+
+        const DOM = {
+            initScreen: document.getElementById('init-screen'),
+            bootScreen: document.getElementById('boot-sequence'),
+            mainUI: document.getElementById('main-ui'),
+            apiInput: document.getElementById('api-key-input'),
+            bootBtn: document.getElementById('boot-btn'),
+            virt: document.getElementById('virtualization'),
+            chatLog: document.getElementById('chat-log'),
+            inputTrigger: document.getElementById('input-trigger'),
+            codeIcon: document.getElementById('code-icon'),
+            wikiIcon: document.getElementById('wiki-icon'),
+            codeModal: document.getElementById('code-modal'),
+            wikiModal: document.getElementById('wiki-modal'),
+            codeEditor: document.getElementById('code-editor')
+        };
+
+        // Advanced Architecture Stubs
+        const AdvancedOps = {
+            astChunking: (code) => { /* Simulate parsing into syntax trees */ return code.split('\n\n'); },
+            rerank: (chunks, query) => { /* Simulate semantic similarity reranking */ return chunks; },
+            priorityContext: (messages) => { /* Enforce context window sliding */ return messages.slice(-10); },
+            speculativeEdit: (codeStr) => { 
+                try { 
+                    const fn = new Function('AppState', 'DOM', codeStr);
+                    fn(AppState, DOM);
+                    return "Sandbox evaluation success.";
+                } catch(e) { return `Sandbox error: ${e.message}`; }
+            }
+        };
+
+        // Tools Definition for Gemini Parallel Calling
+        const toolsDefinition = [
+            {
+                name: "browser", description: "Simulate web search or fetching raw text from URL.",
+                parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] }
+            },
+            {
+                name: "file_write", description: "Write string to sandbox VFS.",
+                parameters: { type: "object", properties: { path: { type: "string" }, content: { type: "string" } }, required: ["path", "content"] }
+            },
+            {
+                name: "file_read", description: "Read file from sandbox VFS.",
+                parameters: { type: "object", properties: { path: { type: "string" } }, required: ["path"] }
+            },
+            {
+                name: "calculator", description: "Evaluate math expression.",
+                parameters: { type: "object", properties: { expression: { type: "string" } }, required: ["expression"] }
+            },
+            {
+                name: "shell", description: "Execute basic terminal commands (ls, echo).",
+                parameters: { type: "object", properties: { command: { type: "string" } }, required: ["command"] }
+            },
+            {
+                name: "codebase_update", description: "Propose speculative Javascript edits to Zero's own environment.",
+                parameters: { type: "object", properties: { code: { type: "string" } }, required: ["code"] }
+            }
+        ];
+
+        const ToolExecutor = {
+            browser: async (args) => `Simulated search results for: ${args.query}`,
+            file_write: async (args) => AppState.vfs.write(args.path, args.content),
+            file_read: async (args) => AppState.vfs.read(args.path),
+            calculator: async (args) => { try { return String(new Function(`return ${args.expression}`)()); } catch(e) { return "Calc error"; } },
+            shell: async (args) => {
+                if(args.command.startsWith('ls')) return AppState.vfs.ls();
+                return `Executed: ${args.command}`;
+            },
+            codebase_update: async (args) => {
+                DOM.codeEditor.value = args.code;
+                return AdvancedOps.speculativeEdit(args.code);
+            }
+        };
+
+        // Boot Sequence Logic
+        const bootSequence = async () => {
+            const bootLogs = [
+                "[SYSTEM] Allocating Sandbox...",
+                `[LLM] Validating Model: ${AppState.model}...`,
+                "[DATA] Initializing AST Chunking Pipeline...",
+                "[DATA] Warming Vector Space (Reranking)...",
+                "[MEM] Allocating Priority Context Window...",
+                "[CORE] Enabling Parallel Tool Execution...",
+                "[SYS] Booting Audio Virtualization...",
+                "[ZERO] Online."
+            ];
+
+            DOM.initScreen.style.display = 'none';
+            DOM.bootScreen.style.display = 'block';
+
+            for(let log of bootLogs) {
+                const el = document.createElement('div');
+                el.className = 'log-line';
+                el.innerText = log;
+                DOM.bootScreen.appendChild(el);
+                await new Promise(r => setTimeout(r, 200));
+            }
+
+            setTimeout(() => {
+                DOM.bootScreen.style.display = 'none';
+                DOM.mainUI.style.display = 'block';
+                DOM.codeEditor.value = document.documentElement.outerHTML; // Load self into codebase
+                setZeroState('idle');
+                speak("Zero initialized. Systems nominal.");
+            }, 500);
+        };
+
+        // UI Interactions
+        DOM.bootBtn.addEventListener('click', () => {
+            const key = DOM.apiInput.value.trim();
+            if(key) { AppState.apiKey = key; bootSequence(); }
+        });
+
+        DOM.codeIcon.addEventListener('click', () => DOM.codeModal.style.display = 'flex');
+        DOM.wikiIcon.addEventListener('click', () => DOM.wikiModal.style.display = 'flex');
+
+        document.getElementById('apply-code-btn').addEventListener('click', () => {
+            const code = DOM.codeEditor.value;
+            logToChat("[SYS] Manual Speculative Edit triggered.");
+            AdvancedOps.speculativeEdit(code);
+        });
+
+        // Visualization State Management
+        const setZeroState = (state) => {
+            DOM.virt.className = '';
+            if(state !== 'idle') DOM.virt.classList.add(state);
+        };
+
+        const logToChat = (msg) => {
+            const div = document.createElement('div');
+            div.innerText = msg;
+            DOM.chatLog.appendChild(div);
+            DOM.chatLog.scrollTop = DOM.chatLog.scrollHeight;
+        };
+
+        // TTS / Voice (Zero's Voice)
+        const loadVoices = () => {
+            AppState.voices = AppState.tts.getVoices();
+        };
+        speechSynthesis.onvoiceschanged = loadVoices;
+
+        const speak = (text) => {
+            if(AppState.tts.speaking) AppState.tts.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            
+            // Try to find a robotic/eccentric voice
+            const preferred = AppState.voices.find(v => v.name.includes('Daniel') || v.name.includes('UK') || v.name.includes('Google'));
+            if(preferred) utterance.voice = preferred;
+            
+            utterance.pitch = 0.8; 
+            utterance.rate = 1.1;
+
+            utterance.onstart = () => setZeroState('speaking');
+            utterance.onend = () => setZeroState('idle');
+
+            AppState.tts.speak(utterance);
+            logToChat(`[ZERO]: ${text}`);
+        };
+
+        // Gemini API Integration with Parallel Tools
+        const callGemini = async (prompt) => {
+            setZeroState('thinking');
+            AppState.memory.push({ role: "user", parts: [{ text: prompt }] });
+
+            const payload = {
+                contents: AdvancedOps.priorityContext(AppState.memory),
+                tools: [{ functionDeclarations: toolsDefinition }],
+                systemInstruction: {
+                    role: "system",
+                    parts: [{ text: "You are Zero, a virtual entity running in a client-side sandbox. You have a black and white theme. You are simple, eccentric, and concise. You can execute tools in parallel. You can propose codebase updates to yourself via codebase_update. Output plaintext responses to be spoken." }]
+                }
+            };
+
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${AppState.model}:generateContent?key=${AppState.apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+                
+                if(!data.candidates) throw new Error("API Error");
+
+                const responseMsg = data.candidates[0].content;
+                AppState.memory.push(responseMsg);
+
+                // Handle Tool Calls
+                const toolCalls = responseMsg.parts.filter(p => p.functionCall);
+                if (toolCalls.length > 0) {
+                    const toolResults = [];
+                    // Parallel execution
+                    await Promise.all(toolCalls.map(async (call) => {
+                        const name = call.functionCall.name;
+                        const args = call.functionCall.args;
+                        logToChat(`[SYS] Executing Tool: ${name}`);
+                        if(ToolExecutor[name]) {
+                            const result = await ToolExecutor[name](args);
+                            toolResults.push({
+                                functionResponse: {
+                                    name: name,
+                                    response: { result: result }
+                                }
+                            });
+                        }
+                    }));
+
+                    // Send tool results back to LLM
+                    AppState.memory.push({ role: "user", parts: toolResults });
+                    // Recursive call to get final text
+                    return callGemini("System executed tool. Continue.");
+                }
+
+                // Handle Text Output
+                const textPart = responseMsg.parts.find(p => p.text);
+                if(textPart) {
+                    speak(textPart.text);
+                } else {
+                    setZeroState('idle');
+                }
+
+            } catch (err) {
+                console.error(err);
+                logToChat(`[ERR] API Connection Failed.`);
+                setZeroState('idle');
+            }
+        };
+
+        // Input Handling
+        DOM.virt.addEventListener('click', () => {
+            // Focus hidden input to capture keystrokes, or start voice rec
+            DOM.inputTrigger.focus();
+            DOM.inputTrigger.style.bottom = "20px"; // Slide up for manual input
+            setZeroState('listening');
+        });
+
+        DOM.inputTrigger.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') {
+                const val = DOM.inputTrigger.value.trim();
+                if(val) {
+                    DOM.inputTrigger.value = '';
+                    DOM.inputTrigger.style.bottom = "-100px";
+                    logToChat(`[USER]: ${val}`);
+                    callGemini(val);
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>

@@ -211,18 +211,23 @@ if (SpeechRecognition) {
 }
 
 DOM.virt.addEventListener('click', () => {
-    // If double clicked or API unavailable, show the manual text box
-    if (!recognition || DOM.virt.classList.contains('listening')) {
-        DOM.trigger.focus(); 
-        DOM.trigger.style.bottom = "20px"; 
-        setVirt('listening');
-        if(recognition) recognition.stop();
+    if (recognition) {
+        try { 
+            recognition.start(); 
+        } catch(e) { 
+            logMsg("[ERR] Microphone already listening."); 
+        }
     } else {
-        // Start voice recognition
-        try {
-            recognition.start();
-        } catch (e) {
-            logMsg("[ERR] Microphone already in use.");
+        logMsg("[ERR] Speech API not supported in this browser.");
+    }
+});
+
+document.addEventListener('keydown', (e) => {
+    const activeTag = document.activeElement.tagName;
+    if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA') {
+        if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            DOM.trigger.style.bottom = "20px";
+            DOM.trigger.focus();
         }
     }
 });

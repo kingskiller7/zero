@@ -172,11 +172,68 @@ const callGemini = async (prompt) => {
     }
 };
 
-DOM.virt.addEventListener('click', () => { DOM.trigger.focus(); DOM.trigger.style.bottom = "20px"; setVirt('listening'); });
+// ============================================================================
+// 🎤 SPEECH RECOGNITION ENGINE (STT)
+// ============================================================================
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+
+if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.continuous = false; // Stop listening after one phrase
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+        setVirt('listening');
+        logMsg("[SYS] Microphone active. Awaiting voice input...");
+    };
+
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        logMsg(`[USER VOICE]: ${transcript}`);
+        callGemini(transcript); // Immediately send to Zero
+    };
+
+    recognition.onerror = (event) => {
+        logMsg(`[ERR] Mic error: ${event.error}`);
+        setVirt('idle');
+    };
+
+    recognition.onend = () => {
+        if(DOM.virt.classList.contains('listening')) {
+            setVirt('idle');
+        }
+    };
+} else {
+    console.warn("Speech Recognition API is not supported in this browser.");
+}
+
+DOM.virt.addEventListener('click', () => {
+    // If double clicked or API unavailable, show the manual text box
+    if (!recognition || DOM.virt.classList.contains('listening')) {
+        DOM.trigger.focus(); 
+        DOM.trigger.style.bottom = "20px"; 
+        setVirt('listening');
+        if(recognition) recognition.stop();
+    } else {
+        // Start voice recognition
+        try {
+            recognition.start();
+        } catch (e) {
+            logMsg("[ERR] Microphone already in use.");
+        }
+    }
+});
+
 DOM.trigger.addEventListener('keypress', (e) => {
     if(e.key === 'Enter' && DOM.trigger.value.trim()) {
-        const v = DOM.trigger.value.trim(); DOM.trigger.value = ''; DOM.trigger.style.bottom = "-100px";
-        logMsg(`[USER]: ${v}`); callGemini(v);
+        const v = DOM.trigger.value.trim(); 
+        DOM.trigger.value = ''; 
+        DOM.trigger.style.bottom = "-100px";
+        logMsg(`[USER]: ${v}`); 
+        callGemini(v);
     }
 });
 

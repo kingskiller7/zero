@@ -1,52 +1,135 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zero - Agentic Sandbox</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Zero</title>
+  <meta name="description" content="Zero — a local-first AI workspace." />
+  <link rel="stylesheet" href="./styles.css" />
 </head>
+
 <body>
-    <div id="init-screen">
-        <h2>[ ZERO : OPTIMIZED & SECURED ]</h2>
-        <input type="password" id="api-key-input" placeholder="ENTER GEMINI API KEY..." autocomplete="off">
-        <button id="boot-btn">INITIALIZE</button>
-    </div>
+  <main id="app" data-state="boot">
+    <!-- Boot stage -->
+    <section id="boot" class="stage" aria-live="polite">
+      <div class="boot-core">
+        <div class="ring"></div>
+        <div class="ring r2"></div>
+        <div class="ring r3"></div>
+      </div>
+      <pre id="boot-log" class="log"></pre>
+    </section>
 
-    <div id="boot-sequence"></div>
+    <!-- Onboarding stage -->
+    <section id="onboarding" class="stage" hidden>
+      <header class="onboarding-head">
+        <h1 class="brand">ZERO</h1>
+        <p class="sub">Select a provider to initialize.</p>
+      </header>
 
-    <div id="main-ui">
-        <div id="virtualization"><div id="core-ring"></div></div>
-        <div id="chat-log"></div>
-        <div class="corner-panel">
-            <button class="icon-btn" id="wiki-icon" title="LLM Wiki">[W]</button>
-            <button class="icon-btn" id="code-icon" title="Codebase">[C]</button>
+      <div class="provider-grid" role="radiogroup" aria-label="Provider">
+        <button class="provider" data-provider="gemini" role="radio" aria-checked="true">
+          <span class="p-name">Google Gemini</span>
+          <span class="p-meta">default · gemini-2.5-flash</span>
+        </button>
+        <button class="provider" data-provider="openrouter" role="radio" aria-checked="false">
+          <span class="p-name">OpenRouter</span>
+          <span class="p-meta">configurable free models</span>
+        </button>
+      </div>
+
+      <form id="key-form" class="key-form" autocomplete="off">
+        <label for="api-key">API Key</label>
+        <input id="api-key" type="password" spellcheck="false" required placeholder="paste key" />
+        <label for="model">Model</label>
+        <input id="model" type="text" spellcheck="false" value="gemini-2.5-flash" />
+        <div class="row">
+          <button type="submit" class="primary">Initialize</button>
+          <span id="key-status" class="status" aria-live="polite"></span>
         </div>
-        <input type="text" id="input-trigger" placeholder="Speak or type...">
-    </div>
+        <p class="note">
+          Keys are stored locally (IndexedDB). Never sent anywhere except the chosen provider.
+        </p>
+      </form>
+    </section>
 
-    <div id="code-modal" class="modal">
-        <div class="modal-header">
-            <span>ZERO_CORE_SOURCE [Hot-Swappable]</span>
-            <span class="close-btn" id="close-code-btn">[X]</span>
+    <!-- Workspace stage -->
+    <section id="workspace" class="stage" hidden>
+      <aside class="rail">
+        <div class="logo">0</div>
+        <nav class="rail-nav">
+          <button data-view="chat" class="active" title="Chat">◐</button>
+          <button data-view="memory" title="Memory">▢</button>
+          <button data-view="tools" title="Tools">◇</button>
+          <button data-view="terminal" title="Terminal">▥</button>
+        </nav>
+        <button id="dev-toggle" class="dev" title="Developer (⌘.)">·</button>
+      </aside>
+
+      <section class="main">
+        <header class="topbar">
+          <div class="visualization" id="viz" data-state="idle">
+            <div class="orb">
+              <div class="o-ring"></div>
+              <div class="o-ring r2"></div>
+              <div class="o-core"></div>
+            </div>
+            <div class="viz-meta">
+              <div class="state" id="viz-state">idle</div>
+              <div class="model" id="viz-model"></div>
+            </div>
+          </div>
+          <div class="topbar-actions">
+            <button id="new-chat" class="ghost">new</button>
+            <button id="settings-btn" class="ghost">settings</button>
+          </div>
+        </header>
+
+        <div class="view" id="view-chat">
+          <div class="messages" id="messages" aria-live="polite"></div>
+          <form class="composer" id="composer">
+            <textarea id="input" rows="1" placeholder="Ask Zero…" autocomplete="off" spellcheck="false"></textarea>
+            <button type="submit" class="send" aria-label="Send">↵</button>
+          </form>
         </div>
-        <textarea id="code-editor" class="code-editor"></textarea>
-        <button id="apply-code-btn">APPLY SPECULATIVE EDITS</button>
-    </div>
 
-    <div id="wiki-modal" class="modal">
-        <div class="modal-header">
-            <span>ZERO_WIKI [Metrics & Tooling]</span>
-            <span class="close-btn" id="close-wiki-btn">[X]</span>
+        <div class="view" id="view-memory" hidden>
+          <div class="placeholder">Memory · coming in step 3</div>
         </div>
-        <textarea id="wiki-editor" class="code-editor" readonly>
-Optimizations & Tools Active:
-- Context Pruning Engine
-- Dual-Execution Mode (Eval JS vs Full DOM Rewrite)
-- Security Sub-Agents: SIEM, EDR, WAF, DLP, IAM, SAST, Forensics
-        </textarea>
-    </div>
+        <div class="view" id="view-tools" hidden>
+          <div class="placeholder">Tools · coming in step 4</div>
+        </div>
+        <div class="view" id="view-terminal" hidden>
+          <div class="placeholder">Terminal · coming in step 5</div>
+        </div>
+      </section>
 
-    <script src="app.js"></script>
+      <aside class="dev-panel" id="dev-panel" hidden>
+        <header><span>developer</span><button id="dev-close">×</button></header>
+        <dl id="dev-stats">
+          <dt>provider</dt>
+          <dd id="d-provider">—</dd>
+          <dt>model</dt>
+          <dd id="d-model">—</dd>
+          <dt>context layers</dt>
+          <dd id="d-layers">L1, L2</dd>
+          <dt>context size</dt>
+          <dd id="d-ctx">0 ch</dd>
+          <dt>tokens (est)</dt>
+          <dd id="d-tokens">0</dd>
+          <dt>latency</dt>
+          <dd id="d-latency">—</dd>
+          <dt>tool calls</dt>
+          <dd id="d-tools">0</dd>
+          <dt>capability</dt>
+          <dd id="d-cap">—</dd>
+        </dl>
+      </aside>
+    </section>
+  </main>
+
+  <script type="module" src="./js/main.js"></script>
 </body>
+
 </html>

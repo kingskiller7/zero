@@ -9,7 +9,7 @@ const empty = () => ({
   task: "",
   constraints: [], // string[]
   files: [], // string[]  (path or label)
-  decisions: [] // { ts, text }[]
+  decisions: [], // { ts, text }[]
 });
 
 let cache = null;
@@ -59,14 +59,10 @@ export function asPrompt(wm = get()) {
   if (wm.goal) lines.push(`Goal: ${wm.goal}`);
   if (wm.project) lines.push(`Project: ${wm.project}`);
   if (wm.task) lines.push(`Active task: ${wm.task}`);
-  if (wm.constraints?.length)
-    lines.push(`Constraints:\n- ${wm.constraints.join("\n- ")}`);
+  if (wm.constraints?.length) lines.push(`Constraints:\n- ${wm.constraints.join("\n- ")}`);
   if (wm.files?.length) lines.push(`Relevant files: ${wm.files.join(", ")}`);
   if (wm.decisions?.length) {
-    const recent = wm.decisions
-      .slice(-3)
-      .map((d) => `- ${d.text}`)
-      .join("\n");
+    const recent = wm.decisions.slice(-3).map((d) => `- ${d.text}`).join("\n");
     lines.push(`Recent decisions:\n${recent}`);
   }
   return lines.length ? lines.join("\n\n") : "";
@@ -74,11 +70,7 @@ export function asPrompt(wm = get()) {
 
 export function isEmpty(wm = get()) {
   return (
-    !wm.goal &&
-    !wm.project &&
-    !wm.task &&
-    !wm.constraints?.length &&
-    !wm.files?.length &&
-    !wm.decisions?.length
+    !wm.goal && !wm.project && !wm.task &&
+    !wm.constraints?.length && !wm.files?.length && !wm.decisions?.length
   );
 }

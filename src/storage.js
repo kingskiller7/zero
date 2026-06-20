@@ -1,7 +1,7 @@
 // Zero — IndexedDB wrapper. Lightweight key/value + collections.
 const DB_NAME = "zero";
-const DB_VERSION = 1;
-const STORES = ["kv", "messages", "memory", "files"];
+const DB_VERSION = 2;
+const STORES = ["kv", "messages", "memory", "files", "wiki"];
 
 let dbPromise = null;
 
@@ -52,7 +52,7 @@ export const kv = {
       r.onsuccess = () => res();
       r.onerror = () => rej(r.error);
     });
-  }
+  },
 };
 
 export const collection = (name) => ({
@@ -61,6 +61,22 @@ export const collection = (name) => ({
     return new Promise((res, rej) => {
       const r = s.add({ ...item, ts: item.ts ?? Date.now() });
       r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+  },
+  async put(item) {
+    const s = await tx(name, "readwrite");
+    return new Promise((res, rej) => {
+      const r = s.put(item);
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+  },
+  async del(id) {
+    const s = await tx(name, "readwrite");
+    return new Promise((res, rej) => {
+      const r = s.delete(id);
+      r.onsuccess = () => res();
       r.onerror = () => rej(r.error);
     });
   },
@@ -79,7 +95,7 @@ export const collection = (name) => ({
       r.onsuccess = () => res();
       r.onerror = () => rej(r.error);
     });
-  }
+  },
 });
 
 export async function init() {

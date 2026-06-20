@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Zero</title>
   <meta name="description" content="Zero — a local-first AI workspace." />
-  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 
 <body>
@@ -63,6 +63,7 @@
           <button data-view="memory" title="Memory">▢</button>
           <button data-view="tools" title="Tools">◇</button>
           <button data-view="terminal" title="Terminal">▥</button>
+          <button data-view="capability" title="Capability">⌘</button>
         </nav>
         <button id="dev-toggle" class="dev" title="Developer (⌘.)">·</button>
       </aside>
@@ -100,9 +101,8 @@
         <div class="view" id="view-tools" hidden>
           <div class="placeholder">Tools · coming in step 4</div>
         </div>
-        <div class="view" id="view-terminal" hidden>
-          <div class="placeholder">Terminal · coming in step 5</div>
-        </div>
+        <div class="view" id="view-terminal" hidden></div>
+        <div class="view" id="view-capability" hidden></div>
       </section>
 
       <aside class="dev-panel" id="dev-panel" hidden>
@@ -122,6 +122,8 @@
           <dd id="d-latency">—</dd>
           <dt>tool calls</dt>
           <dd id="d-tools">0</dd>
+          <dt>wiki entries</dt>
+          <dd id="d-wiki">0</dd>
           <dt>capability</dt>
           <dd id="d-cap">—</dd>
         </dl>
@@ -129,7 +131,7 @@
     </section>
   </main>
 
-  <script type="module" src="./src/main.js"></script>
+  <script type="module" src="./js/main.js"></script>
 </body>
 
 </html>

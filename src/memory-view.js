@@ -1,7 +1,41 @@
-// Zero — Memory view. Edits Working Memory.
+// Zero — Memory view. Tabbed: Working Memory + LLM Wiki.
 import * as wm from "./working-memory.js";
+import { mountWikiView } from "./wiki-view.js";
 
 export function mountMemoryView(root) {
+    root.innerHTML = "";
+    root.classList.add("memory-root");
+
+    const tabs = document.createElement("div");
+    tabs.className = "mem-tabs";
+    const tWorking = tab("Working", true);
+    const tWiki = tab("Wiki");
+    tabs.append(tWorking, tWiki);
+
+    const pane = document.createElement("div");
+    pane.className = "mem-pane";
+
+    root.append(tabs, pane);
+
+    const show = (which) => {
+        tWorking.classList.toggle("active", which === "working");
+        tWiki.classList.toggle("active", which === "wiki");
+        if (which === "working") mountWorking(pane);
+        else mountWikiView(pane);
+    };
+    tWorking.addEventListener("click", () => show("working"));
+    tWiki.addEventListener("click", () => show("wiki"));
+    show("working");
+}
+
+function tab(label, active = false) {
+    const b = document.createElement("button");
+    b.className = "mem-tab" + (active ? " active" : "");
+    b.textContent = label;
+    return b;
+}
+
+function mountWorking(root) {
     root.innerHTML = "";
     root.classList.add("memory-view");
     const cur = wm.get();
@@ -16,11 +50,12 @@ export function mountMemoryView(root) {
         actions(root),
     );
 
-    // live update of decisions when wm changes
     wm.subscribe((next) => {
         const dl = root.querySelector('[data-field="decisions"]');
-        if (dl) dl.replaceWith(decisionList(next.decisions));
-        dl?.setAttribute("data-field", "decisions");
+        if (dl) {
+            const replacement = decisionList(next.decisions);
+            dl.replaceWith(replacement);
+        }
     });
 }
 
@@ -54,7 +89,6 @@ function textarea(field, value, placeholder) {
 function listEditor(field, items, placeholder) {
     const wrap = document.createElement("div");
     wrap.className = "wm-list";
-
     const render = () => {
         wrap.innerHTML = "";
         const current = wm.get()[field] || [];
@@ -128,7 +162,7 @@ function actions(root) {
     clear.addEventListener("click", async () => {
         if (!confirm("Clear all working memory?")) return;
         await wm.clear();
-        mountMemoryView(root);
+        mountWorking(root);
     });
     wrap.append(clear);
     return wrap;

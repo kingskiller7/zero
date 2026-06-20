@@ -2,7 +2,7 @@
 
 export const DEFAULT_MODELS = {
   gemini: "gemini-2.5-flash",
-  openrouter: "meta-llama/llama-3.2-3b-instruct:free"
+  openrouter: "meta-llama/llama-3.2-3b-instruct:free",
 };
 
 export function makeProvider({ provider, apiKey, model }) {
@@ -18,16 +18,11 @@ function geminiProvider({ apiKey, model }) {
     provider: "gemini",
     model,
     async verify() {
-      const r = await fetch(
-        `${base}/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
-        {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ role: "user", parts: [{ text: "ping" }] }]
-          })
-        }
-      );
+      const r = await fetch(`${base}/${model}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "ping" }] }] }),
+      });
       if (!r.ok) throw new Error(`auth failed (${r.status})`);
       return true;
     },
@@ -37,29 +32,25 @@ function geminiProvider({ apiKey, model }) {
         .filter((m) => m.role !== "system")
         .map((m) => ({
           role: m.role === "assistant" ? "model" : "user",
-          parts: [{ text: m.content }]
+          parts: [{ text: m.content }],
         }));
       const body = {
         contents,
-        ...(sys ? { systemInstruction: { parts: [{ text: sys }] } } : {})
+        ...(sys ? { systemInstruction: { parts: [{ text: sys }] } } : {}),
       };
-      const url = `${base}/${model}:streamGenerateContent?alt=sse&key=${encodeURIComponent(
-        apiKey
-      )}`;
+      const url = `${base}/${model}:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}`;
       const r = await fetch(url, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
-        signal
+        signal,
       });
       if (!r.ok) throw new Error(`gemini ${r.status}: ${await r.text()}`);
       yield* sse(r, (json) => {
-        const text =
-          json?.candidates?.[0]?.content?.parts?.map((p) => p.text).join("") ??
-          "";
+        const text = json?.candidates?.[0]?.content?.parts?.map((p) => p.text).join("") ?? "";
         return text;
       });
-    }
+    },
   };
 }
 
@@ -71,7 +62,7 @@ function openrouterProvider({ apiKey, model }) {
     model,
     async verify() {
       const r = await fetch("https://openrouter.ai/api/v1/auth/key", {
-        headers: { authorization: `Bearer ${apiKey}` }
+        headers: { authorization: `Bearer ${apiKey}` },
       });
       if (!r.ok) throw new Error(`auth failed (${r.status})`);
       return true;
@@ -83,14 +74,14 @@ function openrouterProvider({ apiKey, model }) {
           authorization: `Bearer ${apiKey}`,
           "content-type": "application/json",
           "HTTP-Referer": location.origin,
-          "X-Title": "Zero"
+          "X-Title": "Zero",
         },
         body: JSON.stringify({ model, messages, stream: true }),
-        signal
+        signal,
       });
       if (!r.ok) throw new Error(`openrouter ${r.status}: ${await r.text()}`);
       yield* sse(r, (json) => json?.choices?.[0]?.delta?.content ?? "");
-    }
+    },
   };
 }
 
